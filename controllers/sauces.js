@@ -136,10 +136,10 @@ exports.deleteSauce = (req, res, next) => {
 };
 
 //retreive and list sauces for sale
-exports.getAllSauce = (req, res, next) => {
+exports.getAllSauces = (req, res, next) => {
     Sauce.find().then(
-        (sauce) => {
-            res.status(200).json(sauce);
+        (sauces) => {
+            res.status(200).json(sauces);
         }
     ).catch(
         (error) => {
