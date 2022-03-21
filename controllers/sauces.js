@@ -1,7 +1,7 @@
 const Sauce = require('../models/sauce');
 const fs = require('fs');
 
-//save sauces to the database
+//save sauce to the database
 exports.createSauce = (req, res, next) => {
     req.body.sauce = JSON.parse(req.body.sauce);
     const url = req.protocol + '://' + req.get('host');
@@ -50,7 +50,7 @@ exports.getOneSauce = (req, res, next) => {
     );
 };
 
-//update sauces with modifications
+//update sauce with modifications
 exports.modifySauce = (req, res, next) => {
     let sauce = new Sauce({ _id: req.params.id });
     if (req.file) {
@@ -138,8 +138,8 @@ exports.deleteSauce = (req, res, next) => {
 //retreive and list sauces for sale
 exports.getAllSauces = (req, res, next) => {
     Sauce.find().then(
-        (sauces) => {
-            res.status(200).json(sauces);
+        (sauce) => {
+            res.status(200).json(sauce);
         }
     ).catch(
         (error) => {

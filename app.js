@@ -1,15 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
-
-const saucesRoutes = require('./routes/sauces');
+const dotenv = require('dotenv').config()
+const helmet = require("helmet");
+const sauceRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
 
 const app = express();
 
+app.use(helmet());
+
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://MrMWebDev:Pvy64XNCDJkEC59@cluster0.qapcx.mongodb.net/MrMWebDevDB?retryWrites=true&w=majority')
+mongoose.connect(process.env.mongodbConnection)
     .then(() => {
         console.log('Successfully connected to MongoDB Atlas!');
     })
@@ -27,7 +30,7 @@ app.use((req, res, next) => {
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-app.use('/api/sauces', saucesRoutes);
+app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);
 
 module.exports = app;
