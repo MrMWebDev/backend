@@ -1,187 +1,151 @@
 const Sauce = require('../models/sauce');
 const fs = require('fs');
 
-//save sauce to the database
 exports.createSauce = (req, res, next) => {
-    req.body.sauce = JSON.parse(req.body.sauce);
-    const url = req.protocol + '://' + req.get('host');
+    // Parse request sent by "multer-config" middleware
+    const sauceObject = JSON.parse(req.body.sauce);
+    // Remove ID from request (_id will be set automatically by MongoDB)
+    delete sauceObject._id;
+    // Create new instance of "Sauce" model
     const sauce = new Sauce({
-        userId: req.body.sauce.userId,
-        name: req.body.sauce.name,
-        manufacturer: req.body.sauce.manufacturer,
-        description: req.body.sauce.description,
-        mainPepper: req.body.sauce.mainPepper,
-        imageUrl: url + '/images/' + req.file.filename,
-        heat: req.body.sauce.heat,
-        likes: 0,
-        dislikes: 0,
-        usersLiked: [],
-        usersDisliked: []
+        // Use spread operator to get all fiels from object
+        ...sauceObject,
+        // Set image URL based on filename sent by "multer-config" middleware
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
     });
-    sauce.save().then(
-        () => {
-            res.status(201).json({
-                message: 'Post saved successfully!'
-            });
-        }
-    ).catch(
-        (error) => {
-            res.status(400).json({
-                error: error
-            });
-        }
-    );
+    // Call "save()" method from mongoose module to create new "sauce" document in MongoDB
+    sauce.save()
+        .then(() => res.status(201).json({ message: 'Sauce created!' }))
+        .catch(error => res.status(400).json({ error }));
 };
 
-//display a single sauce on  a page
 exports.getOneSauce = (req, res, next) => {
-    Sauce.findOne({ 
-        _id: req.params.id
-    }).then(
-        (sauce) => {
-            res.status(200).json(sauce);
-        }
-    ).catch(
-        (error) => {
-            res.status(404).json({
-                error: error
-            });
-        }
-    );
+    // Call "findOne() method from mongoose module to get requested "sauce" document (filter : "id" from URL)
+    Sauce.findOne({ _id: req.params.id })
+        .then(sauce => res.status(200).json(sauce))
+        .catch(error => res.status(404).json({ error }));
 };
 
-//update sauce with modifications
-exports.modifySauce = (req, res, next) => {
-    let sauce = new Sauce({ _id: req.params.id });
-    if (req.file) {
-        const url = req.protocol + '://' + req.get('host');
-        req.body.sauce = JSON.parse(req.body.sauce);
-        sauce = {
-            _id: req.params.id,
-            userId: req.body.sauce.userId,
-            name: req.body.sauce.name,
-            manufacturer: req.body.sauce.manufacturer,
-            description: req.body.sauce.description,
-            mainPepper: req.body.sauce.mainPepper,
-            imageUrl: url + '/images/' + req.file.filename,
-            heat: req.body.sauce.heat
-        };
-    } else {
-        Sauce.findOne({ _id: req.params.id }).then((sauceResponse) => {
-            sauce = {
-                _id: req.params.id,
-                userId: req.body.userId,
-                name: req.body.name,
-                manufacturer: req.body.manufacturer,
-                description: req.body.description,
-                mainPepper: req.body.mainPepper,
-                imageUrl: sauceResponse.imageUrl,
-                heat: req.body.heat
-            };
-            Sauce.updateOne({ _id: req.params.id }, sauce).then(
-                () => {
-                    res.status(201).json({
-                        message: 'Sauce updated successfully!'
-                    });
-                }
-            ).catch(
-                (error) => {
-                    res.status(400).json({
-                        error: error
-                    });
-                }
-            );
-        }).catch((error) => {
-            res.status(404).json({ error: error });
-        });
-        console.log(sauce);
-    }
-    Sauce.updateOne({ _id: req.params.id }, sauce).then(
-        () => {
-            res.status(201).json({
-                message: 'Sauce updated successfully!'
-            });
-        }
-    ).catch(
-        (error) => {
-            res.status(400).json({
-                error: error
-            });
-        }
-    );
-};
-
-//deletesauce from database and page
-exports.deleteSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id }).then(
-        (sauce) => {
-            const filename = sauce.imageUrl.split('/images/')[1];
-            fs.unlink('images/' + filename, () => {
-                Sauce.deleteOne({ _id: req.params.id }).then(
-                    () => {
-                        res.status(200).json({
-                            message: 'Deleted!'
-                        });
-                    }
-                ).catch(
-                    (error) => {
-                        res.status(400).json({
-                            error: error
-                        });
-                    }
-                );
-            });
-        }
-    );
-};
-
-//retreive and list sauces for sale
 exports.getAllSauces = (req, res, next) => {
-    Sauce.find().then(
-        (sauce) => {
-            res.status(200).json(sauce);
-        }
-    ).catch(
-        (error) => {
-            res.status(400).json({
-                error: error
-            });
-        }
-    );
+    // Call "find()" method from mongoose module to get all "sauce" documents
+    Sauce.find()
+        .then(sauces => res.status(200).json(sauces))
+        .catch(error => res.status(400).json({ error }));
 };
 
-//like a sauce
-exports.likeSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id }).then(sauce => {
-        //like
-        if (req.body.like == 1) {
-            sauce.usersLiked.push(req.body.userId);
-            sauce.likes += req.body.like;
-        }
-        //unlike
-        else if (req.body.like == 0 && sauce.usersLiked.includes(req.body.userId)) {
-            sauce.usersLiked.remove(req.body.userId);
-            sauce.likes -= 1;
-        }
-        //dislike
-        else if (req.body.like == -1) {
-            sauce.usersDisliked.push(req.body.userId);
-            sauce.dislikes += 1;
-        }
-        //undislike
-        else if (req.body.like == 0 && sauce.usersDisliked.includes(req.body.userId)) {
-            sauce.usersDisliked.remove(req.body.userId);
-            sauce.dislikes -= 1;
-        }
-        sauce.save().then(() => {
-            res.status(200).json({
-                message: 'Sauce liked successfully'
-            });
-        }).catch(
-            (error) => {
-                res.status(400).json({
-                    error: error
+exports.modifySauce = (req, res, next) => {
+    // Call "findOne()" method from mongoose module to get "sauce" document
+    Sauce.findOne({ _id: req.params.id })
+        .then((sauce) => {
+            // Check if "sauce" document exists
+            if (!sauce) {
+                return res.status(404).json({
+                    error: new Error('Sauce not found!')
                 });
+            }
+            // Check if user ID from PUT request is the same as user ID from "oc-hotTakes" MongoDB
+            if (sauce.userId !== req.auth.userId) {
+                return res.status(403).json({
+                    error: new Error('403: unauthorized request')
+                });
+            }
+            // Remove file if a new image has been uploaded
+            if (req.file) {
+                const filename = sauce.imageUrl.split('/images/')[1];
+                fs.unlink(`images/${filename}`, (error) => {
+                    if (error) {
+                        throw error;
+                    }
+                })
+            }
+            // Check if image was modified by user
+            const sauceObject = req.file ?
+                {
+                    // Parse request sent by "multer-config" middleware
+                    ...JSON.parse(req.body.sauce),
+                    // Set new image URL based on filename sent by "multer-config" middleware
+                    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+                } : { ...req.body };
+            // Call "updateOne()" method from mongoose module to modify "sauce" document
+            Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
+                .then(() => res.status(200).json({ message: 'Sauce modified!' }))
+                .catch(error => res.status(400).json({ error }));
+        })
+        .catch(error => res.status(500).json({ error }));
+};
+
+exports.likeSauce = (req, res, next) => {
+    // Get "like" and "ID" from request
+    const like = req.body.like;
+    const idSauce = req.params.id;
+    // Call "findOne()" method from mongoose module to get "sauce" document
+    Sauce.findOne({ _id: idSauce })
+        .then(sauce => {
+            const idIncluded = !sauce.usersLiked.includes(req.body.userId) && !sauce.usersDisliked.includes(req.body.userId);
+            if (like === 1 && idIncluded) {
+                // Call "updateOne()" method from mongoose module to modify "sauce" document
+                Sauce.updateOne({ _id: idSauce }, {
+                    $push: { usersLiked: req.body.userId },
+                    $inc: { likes: +1 }
+                })
+                    .then(() => res.status(200).json({ message: 'like added!' }))
+                    .catch(error => res.status(400).json({ error }));
+            } else if (like === -1 && idIncluded) {
+                // Call "updateOne()" method from mongoose module to modify "sauce" document
+                Sauce.updateOne({ _id: idSauce }, {
+                    $push: { usersDisliked: req.body.userId },
+                    $inc: { dislikes: +1 }
+                })
+                    .then(() => res.status(200).json({ message: 'dislike added!' }))
+                    .catch(error => res.status(400).json({ error }));
+            } else {
+                if (sauce.usersLiked.includes(req.body.userId)) {
+                    // Call "updateOne()" method from mongoose module to modify "sauce" document
+                    Sauce.updateOne({ _id: idSauce }, {
+                        $pull: { usersLiked: req.body.userId },
+                        $inc: { likes: -1 }
+                    })
+                        .then(() => res.status(200).json({ message: 'like removed!' }))
+                        .catch(error => res.status(400).json({ error }));
+                } else if (sauce.usersDisliked.includes(req.body.userId)) {
+                    // Call "updateOne()" method from mongoose module to modify "sauce" document
+                    Sauce.updateOne({ _id: idSauce }, {
+                        $pull: { usersDisliked: req.body.userId },
+                        $inc: { dislikes: -1 }
+                    })
+                        .then(() => res.status(200).json({ message: 'dislike removed!' }))
+                        .catch(error => res.status(400).json({ error }));
+                }
+            }
+        })
+};
+
+
+// CRUD(DELETE) - Set "deleteSauce" operation (delete "sauce" document from "oc-hotTakes" in MongoDB)
+exports.deleteSauce = (req, res, next) => {
+    // Call "findOne()" method from mongoose module to get "sauce" document
+    Sauce.findOne({ _id: req.params.id })
+        .then((sauce) => {
+            if (!sauce) {
+                // Check if "sauce" document exists
+                return res.status(404).json({
+                    error: new Error('Sauce not found!')
+                });
+            }
+            // Check if user ID from DELETE request is the same as user ID from "oc-hotTakes" MongoDB
+            if (sauce.userId !== req.auth.userId) {
+                return res.status(403).json({
+                    error: new Error('403: unauthorized request')
+                });
+            }
+            // Remove file from "images" folder
+            const filename = sauce.imageUrl.split('/images/')[1];
+            fs.unlink(`images/${filename}`, () => {
+                // Call "deleteOne()" method from mongoose module to delete "sauce" document from MongoDB
+                Sauce.deleteOne({ _id: req.params.id })
+                    .then(() => res.status(200).json({ message: 'Sauce removed!' }))
+                    .catch(error => res.status(400).json({ error }));
             });
-    });
+        })
+        .catch(error => res.status(500).json({ error }));
 };

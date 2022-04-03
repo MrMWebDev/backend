@@ -1,22 +1,21 @@
 const express = require('express');
-const router = express.Router();
-
+const sauceCtrl = require('../controllers/sauces');
 const auth = require('../middleware/auth');
 const multer = require('../middleware/multer-config');
 
-const sauceCtrl = require('../controllers/sauces');
+const router = express.Router();
 
-//retreive and list sauce for sale
+// Set route : "/api/sauces" GET requests
 router.get('/', auth, sauceCtrl.getAllSauces);
-//save sauce to the database
-router.post('/', auth, multer, sauceCtrl.createSauce);
-//display a single sauce on  a page
+// Set (dynamic) route : "/api/sauces/:id" GET requests
 router.get('/:id', auth, sauceCtrl.getOneSauce);
-//update suaces with modifications
-router.put('/:id', auth, multer, sauceCtrl.modifySauce);
-//deletesauce from database and page
-router.delete('/:id', auth, sauceCtrl.deleteSauce);
-//like a sauce
+// Set route : "/api/sauces" POST requests
+router.post('/', auth, multer, sauceCtrl.createSauce);
+// Set (dynamic) route : "/api/sauces/:id/like" POST requests
 router.post('/:id/like', auth, sauceCtrl.likeSauce);
+// Set (dynamic) route : "/api/sauces/:id" PUT requests
+router.put('/:id', auth, multer, sauceCtrl.modifySauce);
+// Set (dynamic) route : "/api/sauces/:id" DELETE requests
+router.delete('/:id', auth, sauceCtrl.deleteSauce);
 
 module.exports = router;

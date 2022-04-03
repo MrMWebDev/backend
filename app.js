@@ -1,17 +1,11 @@
 const express = require('express');
+const env = require('dotenv').config();
 const mongoose = require('mongoose');
 const path = require('path');
-const dotenv = require('dotenv').config()
-const helmet = require("helmet");
-const sauceRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
+const sauceRoutes = require('./routes/sauces');
 
-const app = express();
-
-app.use(helmet());
-
-app.use(express.json());
-
+// Connection to mango database (connection string to set in ./.env)
 mongoose.connect(process.env.mongodbConnection)
     .then(() => {
         console.log('Successfully connected to MongoDB Atlas!');
@@ -21,16 +15,26 @@ mongoose.connect(process.env.mongodbConnection)
         console.error(error);
     });
 
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+// Create "Express" app
+const app = express();
+
+// Set CORS rules : allow GET, POST, PUT, DELETE requets from another server (frontend on localhost:4200, backend on localhost:3000)
+app.use('/', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow access from anywhere
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'); // Allow specific html headers
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS'); // Allow HTTP verbs
     next();
-});
+})
 
-app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use(express.json());
 
-app.use('/api/sauces', sauceRoutes);
+// Specify which route file to use for requests on "/api/auth"
 app.use('/api/auth', userRoutes);
+
+// Specify which route file to use for requests on "/api/sauces"
+app.use('/api/sauces', sauceRoutes);
+
+// Specify path for "images" folder
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 module.exports = app;
