@@ -15,7 +15,7 @@ exports.createSauce = (req, res, next) => {
     });
     // Call "save()" method from mongoose module to create new "sauce" document in MongoDB
     sauce.save()
-        .then(() => res.status(201).json({ message: 'Sauce created!' }))
+        .then(() => res.status(201).json({ message: 'Sauce saved successfully!' }))
         .catch(error => res.status(400).json({ error }));
 };
 
@@ -56,7 +56,7 @@ exports.modifySauce = (req, res, next) => {
                     if (error) {
                         throw error;
                     }
-                })
+                });
             }
             // Check if image was modified by user
             const sauceObject = req.file ?
@@ -72,6 +72,42 @@ exports.modifySauce = (req, res, next) => {
                 .catch(error => res.status(400).json({ error }));
         })
         .catch(error => res.status(500).json({ error }));
+    // const sauceObject = req.file
+    // ? {
+    //     ...JSON.parse(req.body.sauce),
+    //     imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    //     }
+    //     : { ...req.body }
+    // if (req.file) {
+    //     Sauce.findOne({ _id: req.params.id })
+    //     .then((sauce) => {
+    //         const filename = sauce.imageUrl.split('/images/')[1]
+    //         fs.unlink(`images/${filename}`, () => {
+    //         Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id }).then(
+    //             () => {
+    //             res.status(200).json({ message: 'Sauce has been updated!' })
+    //             }).catch(
+    //             (error) => {
+    //             res.status(400).json({ error })
+    //             })
+    //         })
+    //     })
+    //     .catch((error) => { res.status(500).json({ error }) })
+    // } else {
+    //     Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id }).then(
+    //     () => {
+    //         res.status(201).json({
+    //         message: 'Sauce has been updated successfully!'
+    //         })
+    //     }
+    //     ).catch(
+    //     (error) => {
+    //         res.status(400).json({
+    //         error: error
+    //         })
+    //     }
+    //     )
+    // }
 };
 
 exports.likeSauce = (req, res, next) => {
@@ -117,7 +153,7 @@ exports.likeSauce = (req, res, next) => {
                         .catch(error => res.status(400).json({ error }));
                 }
             }
-        })
+        });
 };
 
 
@@ -143,7 +179,7 @@ exports.deleteSauce = (req, res, next) => {
             fs.unlink(`images/${filename}`, () => {
                 // Call "deleteOne()" method from mongoose module to delete "sauce" document from MongoDB
                 Sauce.deleteOne({ _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'Sauce removed!' }))
+                    .then(() => res.status(200).json({ sauces }))
                     .catch(error => res.status(400).json({ error }));
             });
         })
