@@ -18,7 +18,7 @@ mongoose.connect(process.env.mongodbConnection)
 // Create "Express" app
 const app = express();
 
-// Set CORS rules : allow GET, POST, PUT, DELETE requets from another server (frontend on localhost:4200, backend on localhost:3000)
+// Set CORS rules : allow GET, POST, PUT, DELETE requets
 app.use('/', (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*'); // Allow access from anywhere
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'); // Allow specific html headers
