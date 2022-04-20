@@ -1,11 +1,12 @@
 const express = require('express');
 const env = require('dotenv').config();
 const mongoose = require('mongoose');
+const helmet = require("helmet");
 const path = require('path');
 const userRoutes = require('./routes/user');
 const sauceRoutes = require('./routes/sauces');
 
-// Connection to mango database (connection string to set in ./.env)
+// Connection to mango database (connection string to set in .env)
 mongoose.connect(process.env.mongodbConnection)
     .then(() => {
         console.log('Successfully connected to MongoDB Atlas!');
@@ -26,6 +27,7 @@ app.use('/', (req, res, next) => {
     next();
 });
 
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(express.json());
 
 // Specify which route file to use for requests on "/api/auth"
